@@ -1,0 +1,446 @@
+.home-page {
+    padding-bottom: 24px;
+}
+
+/* Featured Header */
+.featured-header {
+    position: relative;
+    width: 100%;
+    height: 450px;
+    overflow: hidden;
+}
+
+.featured-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.7;
+}
+
+.featured-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top,
+            var(--background) 0%,
+            rgba(15, 17, 21, 0.6) 50%,
+            transparent 100%);
+}
+
+.featured-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.featured-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 229, 255, 0.2);
+    color: var(--primary);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    margin-bottom: 12px;
+}
+
+.featured-title {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.1;
+    margin-bottom: 8px;
+}
+
+.featured-desc {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    max-width: 80%;
+    margin-bottom: 16px;
+}
+
+.featured-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-read {
+    background: #fff;
+    color: #000;
+    padding: 10px 24px;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+.btn-list {
+    background: var(--surface-highlight);
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 0.875rem;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Sections */
+.section {
+    margin-top: 32px;
+    padding: 0 20px;
+}
+
+.section-full {
+    padding: 0;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.section-header.px-5 {
+    padding: 0 20px;
+}
+
+.section-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section-title i {
+    font-size: 1rem;
+}
+
+.see-all {
+    background: transparent;
+    color: var(--primary);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Continue Card */
+.continue-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    cursor: pointer;
+}
+
+.continue-cover {
+    width: 64px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+}
+
+.continue-info {
+    flex: 1;
+}
+
+.continue-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.continue-progress {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--secondary);
+    border-radius: 2px;
+}
+
+.continue-arrow {
+    color: var(--text-muted);
+    font-size: 1rem;
+}
+
+/* Horizontal Scroll */
+.horizontal-scroll {
+    display: flex;
+    overflow-x: auto;
+    padding: 0 20px 16px;
+    gap: 16px;
+    scroll-snap-type: x mandatory;
+}
+
+/* Comic Card Mini */
+.comic-card-mini {
+    flex-shrink: 0;
+    width: 140px;
+    cursor: pointer;
+    scroll-snap-align: start;
+}
+
+.comic-cover-mini {
+    position: relative;
+    aspect-ratio: 2/3;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 8px;
+    box-shadow: var(--shadow-md);
+}
+
+.comic-cover-mini img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.comic-rating {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.comic-rating i {
+    color: #ffd700;
+    font-size: 0.5rem;
+}
+
+.comic-title-mini {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.comic-tag {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Video Card Mini */
+.video-card-mini {
+    flex-shrink: 0;
+    width: 240px;
+    cursor: pointer;
+    scroll-snap-align: start;
+}
+
+.video-thumb-mini {
+    position: relative;
+    aspect-ratio: 16/9;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 8px;
+    box-shadow: var(--shadow-md);
+}
+
+.video-thumb-mini img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.8;
+}
+
+.play-icon-mini {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.play-icon-mini i {
+    color: #fff;
+    font-size: 0.875rem;
+    margin-left: 2px;
+}
+
+.video-duration-mini {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: #fff;
+}
+
+.video-title-mini {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.video-creator {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Skeleton Loading */
+.skeleton-card {
+    pointer-events: none;
+}
+
+.skeleton-cover {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--surface-highlight) 25%, var(--surface) 50%, var(--surface-highlight) 75%);
+    background-size: 200% 100%;
+    border-radius: var(--radius-lg);
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-video {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--surface-highlight) 25%, var(--surface) 50%, var(--surface-highlight) 75%);
+    background-size: 200% 100%;
+    border-radius: var(--radius-lg);
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-title {
+    height: 14px;
+    width: 80%;
+    background: linear-gradient(90deg, var(--surface-highlight) 25%, var(--surface) 50%, var(--surface-highlight) 75%);
+    background-size: 200% 100%;
+    border-radius: 4px;
+    margin-top: 8px;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-tag,
+.skeleton-creator {
+    height: 12px;
+    width: 50%;
+    background: linear-gradient(90deg, var(--surface-highlight) 25%, var(--surface) 50%, var(--surface-highlight) 75%);
+    background-size: 200% 100%;
+    border-radius: 4px;
+    margin-top: 4px;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Featured Skeleton */
+.skeleton-featured {
+    background: var(--surface);
+}
+
+.featured-bg-skeleton {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, var(--surface-highlight) 25%, var(--surface) 50%, var(--surface-highlight) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-badge {
+    width: 80px;
+    height: 24px;
+    background: linear-gradient(90deg, var(--surface-highlight) 25%, var(--surface) 50%, var(--surface-highlight) 75%);
+    background-size: 200% 100%;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-featured-title {
+    width: 200px;
+    height: 36px;
+    background: linear-gradient(90deg, var(--surface-highlight) 25%, var(--surface) 50%, var(--surface-highlight) 75%);
+    background-size: 200% 100%;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-featured-desc {
+    width: 70%;
+    height: 16px;
+    background: linear-gradient(90deg, var(--surface-highlight) 25%, var(--surface) 50%, var(--surface-highlight) 75%);
+    background-size: 200% 100%;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-btn {
+    width: 100px;
+    height: 40px;
+    background: linear-gradient(90deg, var(--surface-highlight) 25%, var(--surface) 50%, var(--surface-highlight) 75%);
+    background-size: 200% 100%;
+    border-radius: var(--radius-md);
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Featured Empty State */
+.featured-empty {
+    background: linear-gradient(135deg, var(--surface) 0%, var(--surface-highlight) 100%);
+}
+
+/* Empty State */
+.empty-state {
+    flex-shrink: 0;
+    width: 100%;
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}

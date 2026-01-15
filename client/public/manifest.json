@@ -1,0 +1,24 @@
+{
+    "name": "Exhibition",
+    "short_name": "Exhibition",
+    "description": "Khám phá truyện tranh và video hấp dẫn",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0a0a14",
+    "theme_color": "#0a0a14",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/ExhibitonIcon.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/ExhibitonIcon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
