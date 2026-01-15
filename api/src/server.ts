@@ -6,6 +6,17 @@ dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
+// Start server immediately to satisfy Render's port detection
+const server = app.listen(Number(PORT), "0.0.0.0", () => {
+  console.log(`✓ Server running on port ${PORT}`);
+});
+
+server.on("error", (err: any) => {
+  console.error("Server error:", err);
+  process.exit(1);
+});
+
+// Connect to database asynchronously
 (async () => {
   try {
     await connectDB();
@@ -17,17 +28,4 @@ const PORT = process.env.PORT || 5000;
     );
     console.warn("⚠️ Server will start without database connection");
   }
-
-  const server = app.listen(Number(PORT), "0.0.0.0", () => {
-    console.log(`✓ Server running on port ${PORT}`);
-  });
-
-  server.on("error", (err: any) => {
-    if (err.code === "EADDRINUSE") {
-      console.error(`Error: Port ${PORT} is already in use`);
-    } else {
-      console.error("Server error:", err);
-    }
-    process.exit(1);
-  });
 })();

@@ -5,7 +5,6 @@ Tài liệu này hướng dẫn chi tiết cách deploy dự án này lên **Ver
 ## 1. Chuẩn bị
 
 Đảm bảo bạn đã:
-
 1. Đăng ký tài khoản [Vercel](https://vercel.com).
 2. Đăng ký tài khoản [Render](https://render.com).
 3. Đẩy toàn bộ code hiện tại lên **GitHub** (chế độ Public hoặc Private đều được).
@@ -66,7 +65,7 @@ Mở file `api/package.json` và thay đổi phần `scripts` như sau:
    - Thêm biến `VITE_API_URL`.
    - Giá trị: URL của Backend bạn vừa copy ở Bước 2.2 + thêm đuôi `/api`.
      - Ví dụ: `https://my-web-api.onrender.com/api`
-     - _Lưu ý: Không có dấu `/` ở cuối cùng._
+     - *Lưu ý: Không có dấu `/` ở cuối cùng.*
 5. Nhấn **Deploy**.
 
 ### Bước 3.2: Kiểm tra
@@ -81,8 +80,8 @@ Mở file `api/package.json` và thay đổi phần `scripts` như sau:
 
 1. **Lỗi 404 trên Frontend khi reload trang**:
    - File `client/vercel.json` đã được cấu hình rewrite cho SPA, nên lỗi này sẽ không xảy ra.
+   
 2. **Lỗi kết nối Database**:
-
    - Kiểm tra kỹ `MONGO_URI` trên Render. Đảm bảo IP của Render được phép truy cập MongoDB (hoặc set 0.0.0.0/0 trong Network Access của MongoDB Atlas).
 
 3. **Backend không chạy được**:
