@@ -25,7 +25,7 @@ export default function ComicReaderPage() {
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showControls, setShowControls] = useState(true);
-  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
+  const [, setLoadedImages] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (id) {
