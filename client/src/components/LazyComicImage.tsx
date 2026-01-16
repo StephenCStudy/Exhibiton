@@ -7,7 +7,7 @@ import {
   isRequestFailed,
   markRequestFailed,
 } from "../utils/imageCache";
-import LoadingSpinner from "./LoadingSpinner";
+import Loader from "./loader.universe";
 
 interface LazyComicImageProps {
   src: string;
@@ -191,7 +191,7 @@ export default function LazyComicImage({
             color: "rgba(255,255,255,0.6)",
           }}
         >
-          <LoadingSpinner />
+          <Loader />
           <span>Trang {pageNumber}</span>
         </div>
       )}

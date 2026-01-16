@@ -1,10 +1,17 @@
 import { useRef, useEffect, useState } from "react";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+// Default placeholder image when no thumbnail is available
+const DEFAULT_THUMBNAIL = "https://i.imgur.com/2wKqGBl.png";
+
 interface VideoThumbnailProps {
   videoId: string;
   alt: string;
   className?: string;
   fallbackUrl?: string;
+  thumbnailFromDb?: string; // Thumbnail already saved in database (base64 or URL)
   onDurationLoaded?: (duration: number) => void;
 }
 
@@ -33,9 +40,12 @@ export default function VideoThumbnail({
   videoId,
   alt,
   className = "",
+  thumbnailFromDb,
 }: VideoThumbnailProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [thumbnailError, setThumbnailError] = useState(false);
 
   // Intersection Observer for lazy loading
   useEffect(() => {
@@ -61,8 +71,68 @@ export default function VideoThumbnail({
     return () => observer.disconnect();
   }, []);
 
+  // Try to load thumbnail when visible
+  useEffect(() => {
+    if (isVisible && !thumbnailUrl && !thumbnailError) {
+      // Priority 1: Use thumbnail from database if available (base64 or URL)
+      if (
+        thumbnailFromDb &&
+        thumbnailFromDb.trim() !== "" &&
+        !thumbnailFromDb.includes("picsum.photos")
+      ) {
+        setThumbnailUrl(thumbnailFromDb);
+        return;
+      }
+
+      // Priority 2: Use the backend thumbnail extraction endpoint
+      const url = `${API_BASE_URL}/videos/${videoId}/thumbnail`;
+      setThumbnailUrl(url);
+    }
+  }, [isVisible, videoId, thumbnailUrl, thumbnailError, thumbnailFromDb]);
+
+  // When thumbnail error occurs, use default placeholder
+  const handleImageError = () => {
+    // If already using default, show gradient
+    if (thumbnailUrl === DEFAULT_THUMBNAIL) {
+      setThumbnailError(true);
+      setThumbnailUrl(null);
+    } else {
+      // Try default placeholder
+      setThumbnailUrl(DEFAULT_THUMBNAIL);
+    }
+  };
+
   const colors = generateColorFromId(videoId);
 
+  // If thumbnail loaded successfully, show it
+  if (thumbnailUrl && !thumbnailError) {
+    return (
+      <div
+        ref={containerRef}
+        className={className}
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          background: "#1a1a2e",
+          overflow: "hidden",
+        }}
+      >
+        <img
+          src={thumbnailUrl}
+          alt={alt}
+          onError={handleImageError}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Fallback to gradient placeholder
   return (
     <div
       ref={containerRef}

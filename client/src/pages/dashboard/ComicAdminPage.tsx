@@ -1,9 +1,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { comicApi } from "../../utils/api";
 import type { Comic } from "../../utils/types";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import Loader from "../../components/loader.universe";
 import Pagination from "../../components/Pagination";
+import { useToast } from "../../components/Toast";
 import "./DashboardPage.css";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+// Default placeholder for comics
+const DEFAULT_COMIC_THUMBNAIL = "https://i.imgur.com/2wKqGBl.png";
 
 type FormData = {
   name?: string;
@@ -22,6 +29,7 @@ export default function ComicAdminPage() {
   const [submitting, setSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetchComics();
@@ -41,21 +49,13 @@ export default function ComicAdminPage() {
   };
 
   const openCreateModal = () => {
-    setModalMode("create");
-    setEditingId(null);
-    setFormData({});
-    setUploadProgress("");
-    setShowModal(true);
+    // Disabled - do nothing
+    return;
   };
 
   const openEditModal = (comic: Comic) => {
-    setModalMode("edit");
-    setEditingId(comic._id);
-    setFormData({
-      name: comic.name,
-    });
-    setUploadProgress("");
-    setShowModal(true);
+    // Disabled - do nothing
+    return;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,7 +74,7 @@ export default function ComicAdminPage() {
           uploadFormData.append("files", formData.comicFiles[i]);
         }
       } else if (modalMode === "create") {
-        alert("Vui lòng chọn ít nhất 1 file ảnh truyện!");
+        showToast("Vui lòng chọn ít nhất 1 file ảnh truyện!", "warning");
         setSubmitting(false);
         setUploadProgress("");
         return;
@@ -118,22 +118,15 @@ export default function ComicAdminPage() {
       fetchComics();
     } catch (error: any) {
       console.error("Error:", error);
-      alert(`Có lỗi xảy ra: ${error.message}`);
+      showToast(`Có lỗi xảy ra: ${error.message}`, "error");
     }
     setSubmitting(false);
     setUploadProgress("");
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Bạn có chắc muốn xóa truyện này?")) return;
-
-    try {
-      await comicApi.delete(id);
-      fetchComics();
-    } catch (error) {
-      console.error("Error deleting:", error);
-      alert("Có lỗi xảy ra khi xóa!");
-    }
+    // Disabled - do nothing
+    return;
   };
 
   // Pagination
@@ -151,7 +144,7 @@ export default function ComicAdminPage() {
   if (loading) {
     return (
       <div className="page-loading">
-        <LoadingSpinner />
+        <Loader />
       </div>
     );
   }
@@ -184,10 +177,10 @@ export default function ComicAdminPage() {
                 <div key={comic._id} className="item-card">
                   <div className="item-thumbnail">
                     <img
-                      src={comic.coverImage}
+                      src={`${API_BASE_URL}/comics/${comic._id}/cover`}
                       alt={comic.name}
                       onError={(e) => {
-                        e.currentTarget.src = `https://picsum.photos/300/450?random=${comic._id}`;
+                        e.currentTarget.src = DEFAULT_COMIC_THUMBNAIL;
                       }}
                     />
                   </div>

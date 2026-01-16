@@ -354,7 +354,11 @@
 
 /* Item Info */
 .item-info {
-    padding: 12px;
+    padding: 10px 12px;
+}
+
+.item-card.video .item-info {
+    padding: 8px 10px;
 }
 
 .item-title {
@@ -366,6 +370,13 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    line-height: 1.3;
+}
+
+.item-card.video .item-title {
+    font-size: 0.8rem;
+    -webkit-line-clamp: 1;
+    margin-bottom: 2px;
 }
 
 .item-date {
@@ -373,9 +384,113 @@
     color: var(--text-secondary);
 }
 
+.item-card.video .item-date {
+    font-size: 0.7rem;
+}
+
 /* Keyframes */
 @keyframes spin {
     to {
         transform: rotate(360deg);
     }
+}
+
+/* Confirm Dialog */
+.confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.confirm-dialog {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 28px 24px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+    animation: scaleIn 0.2s ease;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.confirm-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(255, 71, 87, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.confirm-icon i {
+    font-size: 1.75rem;
+    color: #ff4757;
+}
+
+.confirm-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 10px;
+}
+
+.confirm-message {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.confirm-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-cancel,
+.btn-confirm {
+    flex: 1;
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-cancel {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
+}
+
+.btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-confirm {
+    background: #ff4757;
+    color: #fff;
+}
+
+.btn-confirm:hover {
+    background: #ff3344;
 }

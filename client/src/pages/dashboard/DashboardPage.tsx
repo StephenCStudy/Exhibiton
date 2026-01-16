@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { comicApi, videoApi, syncApi } from "../../utils/api";
 import type { Comic, Video } from "../../utils/types";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import { getVideoName, getComicThumbnail } from "../../utils/types";
+import Loader from "../../components/loader.universe";
 import VideoThumbnail from "../../components/VideoThumbnail";
 import VideoDuration from "../../components/VideoDuration";
 import LazyImage from "../../components/LazyImage";
@@ -153,7 +154,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="page-loading">
-        <LoadingSpinner />
+        <Loader />
       </div>
     );
   }
@@ -284,11 +285,8 @@ export default function DashboardPage() {
                 <div className="item-thumbnail video">
                   <VideoThumbnail
                     videoId={video._id}
-                    alt={video.title}
-                    fallbackUrl={
-                      video.thumbnail ||
-                      `https://picsum.photos/seed/${video._id}/320/180`
-                    }
+                    alt={getVideoName(video)}
+                    thumbnailFromDb={video.thumbnail}
                   />
                   <div className="play-overlay">
                     <i className="fas fa-play"></i>
@@ -300,7 +298,7 @@ export default function DashboardPage() {
                   />
                 </div>
                 <div className="item-info">
-                  <h3 className="item-title">{video.title}</h3>
+                  <h3 className="item-title">{getVideoName(video)}</h3>
                   <p className="item-date">
                     {new Date(video.createdAt).toLocaleDateString("vi-VN")}
                   </p>

@@ -10,6 +10,7 @@ import {
   uploadAndUpdateVideo,
   streamVideo,
   getVideoMetadata,
+  extractVideoThumbnail,
 } from "../controllers/videoController";
 
 // Configure multer for file uploads with larger limits for videos
@@ -26,6 +27,7 @@ router.get("/", getAllVideos);
 router.get("/:id", getVideoById);
 router.get("/:id/stream", streamVideo);
 router.get("/:id/metadata", getVideoMetadata);
+router.get("/:id/thumbnail", extractVideoThumbnail);
 router.post("/", createVideo);
 router.post("/upload", upload.single("file"), uploadAndCreateVideo);
 router.put("/upload/:id", upload.single("file"), uploadAndUpdateVideo);

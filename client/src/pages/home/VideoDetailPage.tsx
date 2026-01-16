@@ -1,8 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { videoApi } from "../../utils/api";
 import type { Video, ApiResponse } from "../../utils/types";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import { getVideoName } from "../../utils/types";
+import { videoCache } from "../../utils/sessionCache";
+import Loader from "../../components/loader.universe";
+import ErrorState from "../../components/ErrorState";
 import BottomNavigation from "../../components/BottomNavigation";
 import VideoThumbnail from "../../components/VideoThumbnail";
 import VideoDuration from "../../components/VideoDuration";
@@ -36,6 +39,8 @@ export default function VideoDetailPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const thumbnailCapturedRef = useRef(false);
   const lastTapRef = useRef<{ time: number; side: "left" | "right" | null }>({
     time: 0,
     side: null,
@@ -90,6 +95,22 @@ export default function VideoDetailPage() {
 
   useEffect(() => {
     if (id) {
+      // Reset video player state when video changes
+      setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
+      setBuffered(0);
+      setVideoError(false);
+      setVideoErrorMessage(null);
+      setIsBuffering(false);
+      thumbnailCapturedRef.current = false; // Reset thumbnail capture flag
+
+      // Reset video element
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+
       fetchVideo();
       fetchAllVideos();
     }
@@ -116,9 +137,22 @@ export default function VideoDetailPage() {
     try {
       setLoading(true);
       setError("");
+
+      // Try cache first
+      const cached = videoCache.getById(id!);
+      if (cached) {
+        setVideo(cached);
+        setLoading(false);
+        // Still fetch fresh data in background
+        fetchVideoInBackground();
+        return;
+      }
+
       const response: ApiResponse<Video> = await videoApi.getById(id!);
       if (response.success && response.data) {
         setVideo(response.data);
+        // Cache the video
+        videoCache.saveById(id!, response.data);
       } else {
         setError(response.message || "Failed to fetch video");
       }
@@ -130,11 +164,32 @@ export default function VideoDetailPage() {
     }
   };
 
+  // Fetch in background without loading state
+  const fetchVideoInBackground = async () => {
+    try {
+      const response: ApiResponse<Video> = await videoApi.getById(id!);
+      if (response.success && response.data) {
+        setVideo(response.data);
+        videoCache.saveById(id!, response.data);
+      }
+    } catch (err) {
+      console.error("Background fetch failed:", err);
+    }
+  };
+
   const fetchAllVideos = async () => {
     try {
+      // Try cache first
+      const cached = videoCache.getAll();
+      if (cached && cached.length > 0) {
+        setAllVideos(cached);
+        return;
+      }
+
       const response: ApiResponse<Video[]> = await videoApi.getAll();
       if (response.success && response.data) {
         setAllVideos(response.data);
+        videoCache.saveAll(response.data);
       }
     } catch (err) {
       console.error(err);
@@ -152,7 +207,7 @@ export default function VideoDetailPage() {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: video?.title,
+        title: video?.name,
         url: window.location.href,
       });
     }
@@ -185,8 +240,126 @@ export default function VideoDetailPage() {
 
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
-      setDuration(videoRef.current.duration);
+      const videoDuration = videoRef.current.duration;
+      setDuration(videoDuration);
       setVideoError(false);
+
+      // Auto-update duration to MongoDB if not set
+      if (
+        video &&
+        (!video.duration || video.duration === 0) &&
+        videoDuration > 0
+      ) {
+        updateVideoMetadata(Math.floor(videoDuration));
+      }
+    }
+  };
+
+  // Update video metadata (duration) to MongoDB
+  const updateVideoMetadata = async (newDuration: number) => {
+    if (!id || !video) return;
+
+    try {
+      const response = await videoApi.update(id, { duration: newDuration });
+      if (response.success && response.data) {
+        // Update local state
+        setVideo(response.data);
+        // Update cache
+        videoCache.updateVideo(id, { duration: newDuration });
+        console.log(`✅ Updated video duration: ${newDuration}s`);
+      }
+    } catch (err) {
+      console.error("Failed to update video metadata:", err);
+    }
+  };
+
+  // Capture thumbnail from video at specific time
+  const captureThumbnail = useCallback((): string | null => {
+    if (!videoRef.current || !canvasRef.current) return null;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) return null;
+
+    // Set canvas size to video size (scaled down for thumbnail)
+    const maxWidth = 640;
+    const maxHeight = 360;
+    const scale = Math.min(
+      maxWidth / video.videoWidth,
+      maxHeight / video.videoHeight
+    );
+
+    canvas.width = video.videoWidth * scale;
+    canvas.height = video.videoHeight * scale;
+
+    // Draw video frame to canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Convert to base64 JPEG (smaller size)
+    return canvas.toDataURL("image/jpeg", 0.8);
+  }, []);
+
+  // Auto-capture and update thumbnail when video plays
+  const handleCanPlayThrough = useCallback(() => {
+    if (!video || !id || thumbnailCapturedRef.current) return;
+
+    // Only capture if thumbnail is empty or is a placeholder
+    const needsThumbnail =
+      !video.thumbnail ||
+      video.thumbnail === "" ||
+      video.thumbnail.includes("picsum.photos");
+
+    if (needsThumbnail && videoRef.current) {
+      // Seek to 1 second to get a meaningful frame
+      const captureTime = Math.min(1, videoRef.current.duration * 0.1);
+
+      // Store current time and playing state
+      const wasPlaying = !videoRef.current.paused;
+      const originalTime = videoRef.current.currentTime;
+
+      // Temporarily seek to capture time
+      videoRef.current.currentTime = captureTime;
+
+      // Wait for seek to complete then capture
+      const onSeeked = async () => {
+        videoRef.current?.removeEventListener("seeked", onSeeked);
+
+        const thumbnailData = captureThumbnail();
+        if (thumbnailData) {
+          thumbnailCapturedRef.current = true;
+          await updateVideoThumbnail(thumbnailData);
+        }
+
+        // Restore original position
+        if (videoRef.current) {
+          videoRef.current.currentTime = originalTime;
+          if (wasPlaying) {
+            videoRef.current.play();
+          }
+        }
+      };
+
+      videoRef.current.addEventListener("seeked", onSeeked);
+    }
+  }, [video, id, captureThumbnail]);
+
+  // Update video thumbnail to MongoDB
+  const updateVideoThumbnail = async (thumbnailData: string) => {
+    if (!id || !video) return;
+
+    try {
+      const response = await videoApi.update(id, { thumbnail: thumbnailData });
+      if (response.success && response.data) {
+        // Update local state
+        setVideo(response.data);
+        // Update cache
+        videoCache.updateVideo(id, { thumbnail: thumbnailData });
+        console.log(`✅ Updated video thumbnail`);
+      }
+    } catch (err) {
+      console.error("Failed to update video thumbnail:", err);
     }
   };
 
@@ -239,11 +412,80 @@ export default function VideoDetailPage() {
     }
   };
 
-  const skip = (seconds: number) => {
+  const skip = useCallback((seconds: number) => {
     if (videoRef.current) {
       videoRef.current.currentTime += seconds;
     }
-  };
+  }, []);
+
+  // Keyboard controls
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input field
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+
+      switch (e.code) {
+        case "Space":
+          e.preventDefault();
+          togglePlay();
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          skip(-10);
+          // Show indicator
+          setDoubleTapIndicator({
+            show: true,
+            side: "left",
+            seconds: 10,
+          });
+          setTimeout(() => setDoubleTapIndicator(null), 500);
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          skip(10);
+          // Show indicator
+          setDoubleTapIndicator({
+            show: true,
+            side: "right",
+            seconds: 10,
+          });
+          setTimeout(() => setDoubleTapIndicator(null), 500);
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          if (videoRef.current) {
+            const newVolume = Math.min(1, volume + 0.1);
+            videoRef.current.volume = newVolume;
+            setVolume(newVolume);
+            sessionStorage.setItem("videoVolume", newVolume.toString());
+          }
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          if (videoRef.current) {
+            const newVolume = Math.max(0, volume - 0.1);
+            videoRef.current.volume = newVolume;
+            setVolume(newVolume);
+            sessionStorage.setItem("videoVolume", newVolume.toString());
+          }
+          break;
+        case "KeyM":
+          toggleMute();
+          break;
+        case "KeyF":
+          toggleFullscreen();
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [skip, volume]);
 
   // Playback speed control
   const changePlaybackSpeed = (speed: number) => {
@@ -255,8 +497,22 @@ export default function VideoDetailPage() {
     setShowSpeedMenu(false);
   };
 
-  // Double tap to seek
-  const handleDoubleTap = (e: React.MouseEvent<HTMLDivElement>) => {
+  // Handle video container click - single tap to toggle play, double tap to seek
+  const singleTapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+
+  const handleVideoContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Don't handle if clicking on controls
+    const target = e.target as HTMLElement;
+    if (
+      target.closest(".video-controls") ||
+      target.closest(".play-overlay") ||
+      target.closest(".video-error-overlay")
+    ) {
+      return;
+    }
+
     if (!containerRef.current || !videoRef.current) return;
 
     const rect = containerRef.current.getBoundingClientRect();
@@ -269,6 +525,13 @@ export default function VideoDetailPage() {
       now - lastTapRef.current.time < 300 &&
       lastTapRef.current.side === side
     ) {
+      // Cancel single tap action
+      if (singleTapTimeoutRef.current) {
+        clearTimeout(singleTapTimeoutRef.current);
+        singleTapTimeoutRef.current = null;
+      }
+
+      // Double tap - seek
       const seekSeconds = side === "left" ? -10 : 10;
       videoRef.current.currentTime += seekSeconds;
 
@@ -285,7 +548,19 @@ export default function VideoDetailPage() {
       // Reset tap tracking
       lastTapRef.current = { time: 0, side: null };
     } else {
+      // Single tap - toggle play/pause after delay
       lastTapRef.current = { time: now, side };
+
+      // Clear previous timeout
+      if (singleTapTimeoutRef.current) {
+        clearTimeout(singleTapTimeoutRef.current);
+      }
+
+      // Delay to check for double tap
+      singleTapTimeoutRef.current = setTimeout(() => {
+        togglePlay();
+        singleTapTimeoutRef.current = null;
+      }, 300);
     }
   };
 
@@ -333,23 +608,17 @@ export default function VideoDetailPage() {
   if (loading) {
     return (
       <div className="video-loading">
-        <LoadingSpinner />
-        <p className="video-loading-text">Đang tải video...</p>
+        <Loader />
       </div>
     );
   }
 
   if (error || !video) {
     return (
-      <div className="video-error">
-        <div className="video-error-icon">
-          <i className="fas fa-exclamation-triangle"></i>
-        </div>
-        <p className="video-error-text">{error || "Không tìm thấy video"}</p>
-        <button className="video-retry-btn" onClick={fetchVideo}>
-          Thử lại
-        </button>
-      </div>
+      <ErrorState
+        message={error || "Không tìm thấy video"}
+        onRetry={fetchVideo}
+      />
     );
   }
 
@@ -369,7 +638,7 @@ export default function VideoDetailPage() {
         className={`video-player-container ${isFullscreen ? "fullscreen" : ""}`}
         onMouseMove={() => setShowControls(true)}
         onMouseLeave={() => isPlaying && setShowControls(false)}
-        onClick={handleDoubleTap}
+        onClick={handleVideoContainerClick}
       >
         <video
           ref={videoRef}
@@ -378,15 +647,20 @@ export default function VideoDetailPage() {
           poster={
             video.thumbnail || `https://picsum.photos/seed/${video._id}/640/360`
           }
+          crossOrigin="anonymous"
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
+          onCanPlayThrough={handleCanPlayThrough}
           onError={handleVideoError}
           onWaiting={() => setIsBuffering(true)}
           onCanPlay={() => setIsBuffering(false)}
           playsInline
         />
+
+        {/* Hidden canvas for thumbnail capture */}
+        <canvas ref={canvasRef} style={{ display: "none" }} />
 
         {/* Double tap indicators */}
         {doubleTapIndicator && (
@@ -545,7 +819,7 @@ export default function VideoDetailPage() {
 
       {/* Video Info */}
       <div className="video-info-section">
-        <h1 className="video-main-title">{video.title}</h1>
+        <h1 className="video-main-title">{getVideoName(video)}</h1>
         <div className="video-meta">
           <span>{new Date(video.createdAt).toLocaleDateString("vi-VN")}</span>
           {duration > 0 && (
@@ -590,7 +864,8 @@ export default function VideoDetailPage() {
                 <div className="up-next-thumb">
                   <VideoThumbnail
                     videoId={v._id}
-                    alt={v.title}
+                    alt={v.name}
+                    thumbnailFromDb={v.thumbnail}
                     fallbackUrl={
                       v.thumbnail ||
                       `https://picsum.photos/seed/${v._id}/320/180`
@@ -603,7 +878,7 @@ export default function VideoDetailPage() {
                   />
                 </div>
                 <div className="up-next-content">
-                  <h4 className="up-next-title">{v.title}</h4>
+                  <h4 className="up-next-title">{v.name}</h4>
                   <p className="up-next-meta">
                     {new Date(v.createdAt).toLocaleDateString("vi-VN")}
                   </p>

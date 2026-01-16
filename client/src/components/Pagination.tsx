@@ -46,51 +46,53 @@ export default function Pagination({
   };
 
   return (
-    <div className="pagination" onClick={(e) => e.stopPropagation()}>
-      <button
-        className="pagination-btn"
-        onClick={(e) => handleClick(e, currentPage - 1)}
-        disabled={currentPage === 1}
-        aria-label="Previous page"
-        type="button"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <polyline points="15 18 9 12 15 6"></polyline>
-        </svg>
-      </button>
+    <div className="pagination-wrapper">
+      <div className="pagination" onClick={(e) => e.stopPropagation()}>
+        <button
+          className="pagination-btn"
+          onClick={(e) => handleClick(e, currentPage - 1)}
+          disabled={currentPage === 1}
+          aria-label="Previous page"
+          type="button"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
 
-      <div className="pagination-pages">
-        {pages.map((page, index) =>
-          typeof page === "number" ? (
-            <button
-              key={index}
-              className={`pagination-page ${
-                page === currentPage ? "active" : ""
-              }`}
-              onClick={(e) => handleClick(e, page)}
-              type="button"
-            >
-              {page}
-            </button>
-          ) : (
-            <span key={index} className="pagination-ellipsis">
-              {page}
-            </span>
-          )
-        )}
+        <div className="pagination-pages">
+          {pages.map((page, index) =>
+            typeof page === "number" ? (
+              <button
+                key={index}
+                className={`pagination-page ${
+                  page === currentPage ? "active" : ""
+                }`}
+                onClick={(e) => handleClick(e, page)}
+                type="button"
+              >
+                {page}
+              </button>
+            ) : (
+              <span key={index} className="pagination-ellipsis">
+                {page}
+              </span>
+            )
+          )}
+        </div>
+
+        <button
+          className="pagination-btn"
+          onClick={(e) => handleClick(e, currentPage + 1)}
+          disabled={currentPage === totalPages}
+          aria-label="Next page"
+          type="button"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
       </div>
-
-      <button
-        className="pagination-btn"
-        onClick={(e) => handleClick(e, currentPage + 1)}
-        disabled={currentPage === totalPages}
-        aria-label="Next page"
-        type="button"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
-      </button>
     </div>
   );
 }

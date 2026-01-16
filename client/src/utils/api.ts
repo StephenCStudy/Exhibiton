@@ -25,8 +25,9 @@ export const comicApi = {
 
   create: async (data: {
     name: string;
-    coverImage: string;
-    megaFolderLink: string;
+    thumbnail: string;
+    description?: string;
+    pages?: { pageNumber: number; image: string }[];
   }) => {
     const response = await fetch(`${API_BASE_URL}/comics`, {
       method: "POST",
@@ -38,7 +39,12 @@ export const comicApi = {
 
   update: async (
     id: string,
-    data: { name: string; coverImage: string; megaFolderLink: string }
+    data: {
+      name?: string;
+      thumbnail?: string;
+      description?: string;
+      pages?: { pageNumber: number; image: string }[];
+    }
   ) => {
     const response = await fetch(`${API_BASE_URL}/comics/${id}`, {
       method: "PUT",
@@ -69,9 +75,10 @@ export const videoApi = {
   },
 
   create: async (data: {
-    title: string;
+    name: string;
+    link: string;
     thumbnail: string;
-    megaVideoLink: string;
+    duration?: number;
   }) => {
     const response = await fetch(`${API_BASE_URL}/videos`, {
       method: "POST",
@@ -83,7 +90,12 @@ export const videoApi = {
 
   update: async (
     id: string,
-    data: { title: string; thumbnail: string; megaVideoLink: string }
+    data: {
+      name?: string;
+      link?: string;
+      thumbnail?: string;
+      duration?: number;
+    }
   ) => {
     const response = await fetch(`${API_BASE_URL}/videos/${id}`, {
       method: "PUT",

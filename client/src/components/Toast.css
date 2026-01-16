@@ -1,0 +1,118 @@
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 400px;
+    pointer-events: none;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    animation: slideIn 0.3s ease;
+    pointer-events: auto;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.toast:hover {
+    transform: translateX(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.toast-success .toast-icon {
+    color: #4ade80;
+}
+
+.toast-error .toast-icon {
+    color: #f87171;
+}
+
+.toast-warning .toast-icon {
+    color: #fbbf24;
+}
+
+.toast-info .toast-icon {
+    color: var(--primary);
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    line-height: 1.4;
+}
+
+.toast-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    padding: 4px;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.toast-close:hover {
+    opacity: 1;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+    .toast-container {
+        top: auto;
+        bottom: 80px;
+        left: 16px;
+        right: 16px;
+        max-width: none;
+    }
+
+    .toast {
+        padding: 12px 14px;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .toast:hover {
+        transform: translateY(-2px);
+    }
+}

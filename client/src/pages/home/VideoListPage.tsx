@@ -1,8 +1,11 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { videoApi } from "../../utils/api";
 import type { Video, ApiResponse } from "../../utils/types";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import { getVideoName } from "../../utils/types";
+import { videoCache } from "../../utils/sessionCache";
+import Loader from "../../components/loader.universe";
+import ErrorState from "../../components/ErrorState";
 import Pagination from "../../components/Pagination";
 import VideoThumbnail from "../../components/VideoThumbnail";
 import "./VideoListPage.css";
@@ -38,12 +41,25 @@ export default function VideoListPage() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const hasFetched = useRef(false);
 
   // Get current page from URL
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
 
   useEffect(() => {
-    fetchVideos();
+    // Try to load from cache first
+    const cached = videoCache.getAll();
+    if (cached && cached.length > 0) {
+      setVideos(cached);
+      setLoading(false);
+      // Refresh in background if needed
+      if (!hasFetched.current) {
+        hasFetched.current = true;
+        fetchVideosInBackground();
+      }
+    } else {
+      fetchVideos();
+    }
   }, []);
 
   // Reset to page 1 when search query changes
@@ -60,6 +76,8 @@ export default function VideoListPage() {
       const response: ApiResponse<Video[]> = await videoApi.getAll();
       if (response.success && response.data) {
         setVideos(response.data);
+        // Cache the results
+        videoCache.saveAll(response.data);
       } else {
         setError(response.message || "Failed to fetch videos");
       }
@@ -68,6 +86,20 @@ export default function VideoListPage() {
       console.error(err);
     } finally {
       setLoading(false);
+      hasFetched.current = true;
+    }
+  };
+
+  // Fetch in background without showing loading
+  const fetchVideosInBackground = async () => {
+    try {
+      const response: ApiResponse<Video[]> = await videoApi.getAll();
+      if (response.success && response.data) {
+        setVideos(response.data);
+        videoCache.saveAll(response.data);
+      }
+    } catch (err) {
+      console.error("Background fetch failed:", err);
     }
   };
 
@@ -75,7 +107,9 @@ export default function VideoListPage() {
   const filteredVideos = useMemo(() => {
     if (!searchQuery.trim()) return videos;
     const query = searchQuery.toLowerCase();
-    return videos.filter((video) => video.title.toLowerCase().includes(query));
+    return videos.filter((video) =>
+      getVideoName(video).toLowerCase().includes(query)
+    );
   }, [videos, searchQuery]);
 
   // Sort videos
@@ -83,9 +117,13 @@ export default function VideoListPage() {
     const sorted = [...filteredVideos];
     switch (sortBy) {
       case "title-asc":
-        return sorted.sort((a, b) => a.title.localeCompare(b.title));
+        return sorted.sort((a, b) =>
+          getVideoName(a).localeCompare(getVideoName(b))
+        );
       case "title-desc":
-        return sorted.sort((a, b) => b.title.localeCompare(a.title));
+        return sorted.sort((a, b) =>
+          getVideoName(b).localeCompare(getVideoName(a))
+        );
       case "newest":
         return sorted.sort(
           (a, b) =>
@@ -148,24 +186,13 @@ export default function VideoListPage() {
   if (loading) {
     return (
       <div className="video-loading">
-        <LoadingSpinner />
-        <p className="video-loading-text">Đang tải videos...</p>
+        <Loader />
       </div>
     );
   }
 
   if (error) {
-    return (
-      <div className="video-error">
-        <div className="video-error-icon">
-          <i className="fas fa-exclamation-triangle"></i>
-        </div>
-        <p className="video-error-text">{error}</p>
-        <button className="video-retry-btn" onClick={fetchVideos}>
-          Thử lại
-        </button>
-      </div>
-    );
+    return <ErrorState message={error} onRetry={fetchVideos} />;
   }
 
   return (
@@ -255,7 +282,8 @@ export default function VideoListPage() {
                 <div className="video-thumb">
                   <VideoThumbnail
                     videoId={video._id}
-                    alt={video.title}
+                    alt={getVideoName(video)}
+                    thumbnailFromDb={video.thumbnail}
                     fallbackUrl={
                       video.thumbnail ||
                       `https://picsum.photos/seed/${video._id}/640/360`
@@ -269,7 +297,7 @@ export default function VideoListPage() {
                   </span>
                 </div>
                 <div className="video-content">
-                  <h3 className="video-card-title">{video.title}</h3>
+                  <h3 className="video-card-title">{getVideoName(video)}</h3>
                   <p className="video-card-date">
                     {new Date(video.createdAt).toLocaleDateString("vi-VN")}
                   </p>

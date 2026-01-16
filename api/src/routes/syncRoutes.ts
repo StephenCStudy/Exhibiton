@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   syncVideosFromMega,
   syncComicsFromMega,
+  syncAllFromMega,
   getMegaFolderStructure,
 } from "../controllers/syncController";
 
@@ -15,5 +16,8 @@ router.post("/mega/videos", syncVideosFromMega);
 
 // Sync comics from Mega Comic folder
 router.post("/mega/comics", syncComicsFromMega);
+
+// Sync all (videos + comics) from Mega
+router.post("/mega/all", syncAllFromMega);
 
 export default router;

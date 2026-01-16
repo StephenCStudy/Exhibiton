@@ -1,5 +1,4 @@
 import { Router } from "express";
-import multer from "multer";
 import {
   getAllComics,
   getComicById,
@@ -9,29 +8,27 @@ import {
   createComic,
   updateComic,
   deleteComic,
-  uploadAndCreateComic,
-  uploadAndUpdateComic,
 } from "../controllers/comicController";
-
-// Configure multer for file uploads with larger limits
-const upload = multer({
-  dest: "uploads/",
-  limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB per file
-    files: 100, // Max 100 files
-  },
-});
 
 const router = Router();
 
+// Get all comics (without pages for list view)
 router.get("/", getAllComics);
+
+// Get single comic by ID (includes pages)
 router.get("/:id", getComicById);
+
+// Get comic pages data
 router.get("/:id/images", getComicImages);
+
+// Stream a single image from stored page URL
 router.get("/:id/image/:imageIndex/stream", streamComicImage);
+
+// Get cover image (thumbnail)
 router.get("/:id/cover", getCoverImage);
+
+// CRUD operations
 router.post("/", createComic);
-router.post("/upload", upload.array("files", 100), uploadAndCreateComic);
-router.put("/upload/:id", upload.array("files", 100), uploadAndUpdateComic);
 router.put("/:id", updateComic);
 router.delete("/:id", deleteComic);
 

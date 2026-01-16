@@ -84,20 +84,21 @@ export const getVideoById = async (req: Request, res: Response) => {
 // Create new video
 export const createVideo = async (req: Request, res: Response) => {
   try {
-    const { title, thumbnail, megaVideoLink } = req.body;
+    const { name, link, thumbnail, duration } = req.body;
 
     // Validation
-    if (!title || !thumbnail || !megaVideoLink) {
+    if (!name || !link || !thumbnail) {
       return res.status(400).json({
         success: false,
-        message: "All fields are required: title, thumbnail, megaVideoLink",
+        message: "Required fields: name, link, thumbnail",
       });
     }
 
     const video = await Video.create({
-      title,
+      name,
+      link,
       thumbnail,
-      megaVideoLink,
+      duration: duration || 0,
     });
 
     res.status(201).json({
@@ -116,11 +117,11 @@ export const createVideo = async (req: Request, res: Response) => {
 export const updateVideo = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, thumbnail, megaVideoLink } = req.body;
+    const { name, link, thumbnail, duration } = req.body;
 
     const video = await Video.findByIdAndUpdate(
       id,
-      { title, thumbnail, megaVideoLink },
+      { name, link, thumbnail, duration },
       { new: true, runValidators: true }
     );
 
@@ -175,19 +176,19 @@ export const uploadAndCreateVideo = async (req: Request, res: Response) => {
   let megaService: MegaService | null = null;
 
   try {
-    const { title } = req.body;
+    const { name } = req.body;
     const file = req.file as Express.Multer.File;
 
-    // Validation - only need title and file, thumbnail will be auto-generated
-    if (!title || !file) {
+    // Validation - only need name and file, thumbnail will be auto-generated
+    if (!name || !file) {
       return res.status(400).json({
         success: false,
-        message: "Required fields: title and video file",
+        message: "Required fields: name and video file",
       });
     }
 
     tempFilePath = file.path;
-    const fileName = `Video_${title.replace(
+    const fileName = `Video_${name.replace(
       /[^a-zA-Z0-9]/g,
       "_"
     )}_${Date.now()}${path.extname(file.originalname)}`;
@@ -214,9 +215,9 @@ export const uploadAndCreateVideo = async (req: Request, res: Response) => {
       tempFilePath,
       fileName
     );
-    const megaVideoLink = await megaService.getPublicLink(uploadedVideoNode);
+    const videoLink = await megaService.getPublicLink(uploadedVideoNode);
 
-    if (!megaVideoLink) {
+    if (!videoLink) {
       throw new Error("Failed to get Mega link for uploaded video");
     }
 
@@ -240,9 +241,10 @@ export const uploadAndCreateVideo = async (req: Request, res: Response) => {
 
     // Create video record
     const video = await Video.create({
-      title,
+      name,
+      link: videoLink,
       thumbnail,
-      megaVideoLink,
+      duration: 0,
     });
 
     // Cleanup temp files
@@ -279,7 +281,7 @@ export const uploadAndUpdateVideo = async (req: Request, res: Response) => {
 
   try {
     const { id } = req.params;
-    const { title } = req.body;
+    const { name } = req.body;
     const file = req.file as Express.Multer.File;
 
     // Check if video exists
@@ -291,11 +293,11 @@ export const uploadAndUpdateVideo = async (req: Request, res: Response) => {
       });
     }
 
-    // If no file uploaded, just update title
+    // If no file uploaded, just update name
     if (!file) {
       const video = await Video.findByIdAndUpdate(
         id,
-        { title: title || existingVideo.title },
+        { name: name || existingVideo.name },
         { new: true, runValidators: true }
       );
 
@@ -307,8 +309,8 @@ export const uploadAndUpdateVideo = async (req: Request, res: Response) => {
     }
 
     tempFilePath = file.path;
-    const finalTitle = title || existingVideo.title;
-    const fileName = `Video_${finalTitle.replace(
+    const finalName = name || existingVideo.name;
+    const fileName = `Video_${finalName.replace(
       /[^a-zA-Z0-9]/g,
       "_"
     )}_${Date.now()}${path.extname(file.originalname)}`;
@@ -335,7 +337,7 @@ export const uploadAndUpdateVideo = async (req: Request, res: Response) => {
       tempFilePath,
       fileName
     );
-    const megaVideoLink = await megaService.getPublicLink(uploadedVideoNode);
+    const videoLink = await megaService.getPublicLink(uploadedVideoNode);
 
     // Upload thumbnail if extracted successfully
     if (thumbnailExtracted && fs.existsSync(tempThumbnailPath)) {
@@ -357,9 +359,9 @@ export const uploadAndUpdateVideo = async (req: Request, res: Response) => {
     const video = await Video.findByIdAndUpdate(
       id,
       {
-        title: finalTitle,
+        name: finalName,
+        link: videoLink,
         thumbnail,
-        megaVideoLink,
       },
       { new: true, runValidators: true }
     );
@@ -404,9 +406,12 @@ export const streamVideo = async (req: Request, res: Response) => {
       });
     }
 
-    const megaLink = video.megaVideoLink;
+    // Support both old and new schema fields
+    const videoDoc = video.toObject() as any;
+    const megaLink = video.link || videoDoc.megaVideoLink;
+    const videoName = video.name || videoDoc.title;
     console.log(
-      `[STREAM] Video found: ${video.title}, MegaLink: ${
+      `[STREAM] Video found: ${videoName}, MegaLink: ${
         megaLink ? "exists" : "MISSING"
       }`
     );
@@ -638,7 +643,7 @@ export const getVideoMetadata = async (req: Request, res: Response) => {
       });
     }
 
-    const megaLink = video.megaVideoLink;
+    const megaLink = video.link;
     if (!megaLink) {
       return res.status(400).json({
         success: false,
@@ -655,7 +660,7 @@ export const getVideoMetadata = async (req: Request, res: Response) => {
       data: {
         name: file.name,
         size: file.size,
-        duration: video.duration || 0,
+        duration: video.duration,
       },
     });
   } catch (error: any) {
@@ -664,5 +669,112 @@ export const getVideoMetadata = async (req: Request, res: Response) => {
       success: false,
       message: error.message || "Failed to get video metadata",
     });
+  }
+};
+
+// Extract thumbnail from video at specific timestamp
+export const extractVideoThumbnail = async (req: Request, res: Response) => {
+  let tempVideoPath: string | null = null;
+  let tempThumbnailPath: string | null = null;
+
+  try {
+    const { id } = req.params;
+    const timestamp = req.query.t || "00:00:01"; // Default to 1 second
+
+    const video = await Video.findById(id);
+    if (!video) {
+      return res.status(404).json({
+        success: false,
+        message: "Video not found",
+      });
+    }
+
+    // Check if video already has a valid thumbnail (not placeholder)
+    if (video.thumbnail && !video.thumbnail.includes("picsum.photos")) {
+      return res.redirect(video.thumbnail);
+    }
+
+    const videoDoc = video.toObject() as any;
+    const megaLink = video.link || videoDoc.megaVideoLink;
+
+    if (!megaLink) {
+      return res.status(400).json({
+        success: false,
+        message: "No Mega link available",
+      });
+    }
+
+    // Create temp directory
+    const tempDir = path.join(process.cwd(), "temp_thumbnails");
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+
+    tempVideoPath = path.join(tempDir, `video_${id}_${Date.now()}.mp4`);
+    tempThumbnailPath = path.join(tempDir, `thumb_${id}_${Date.now()}.jpg`);
+
+    // Download first 10MB of video for thumbnail extraction
+    console.log(`[THUMBNAIL] Downloading partial video for: ${id}`);
+    const file = File.fromURL(megaLink);
+    await file.loadAttributes();
+
+    // Download first chunk (enough for ffmpeg to extract a frame)
+    const maxBytes = 10 * 1024 * 1024; // 10MB should be enough
+    const downloadSize = Math.min(file.size || maxBytes, maxBytes);
+
+    const downloadStream = file.download({ start: 0, end: downloadSize - 1 });
+    const writeStream = fs.createWriteStream(tempVideoPath);
+
+    await new Promise<void>((resolve, reject) => {
+      downloadStream.on("error", reject);
+      writeStream.on("error", reject);
+      writeStream.on("finish", resolve);
+      downloadStream.pipe(writeStream);
+    });
+
+    console.log(
+      `[THUMBNAIL] Downloaded ${downloadSize} bytes, extracting frame...`
+    );
+
+    // Extract thumbnail using ffmpeg
+    try {
+      await execAsync(
+        `ffmpeg -i "${tempVideoPath}" -ss ${timestamp} -vframes 1 -vf "scale=640:360:force_original_aspect_ratio=decrease,pad=640:360:(ow-iw)/2:(oh-ih)/2" -q:v 2 "${tempThumbnailPath}" -y`,
+        { timeout: 30000 }
+      );
+    } catch (ffmpegError: any) {
+      console.error("[THUMBNAIL] ffmpeg error:", ffmpegError.message);
+      // Fallback: try without scaling
+      await execAsync(
+        `ffmpeg -i "${tempVideoPath}" -ss ${timestamp} -vframes 1 -q:v 2 "${tempThumbnailPath}" -y`,
+        { timeout: 30000 }
+      );
+    }
+
+    if (!fs.existsSync(tempThumbnailPath)) {
+      throw new Error("Failed to extract thumbnail");
+    }
+
+    console.log(`[THUMBNAIL] Thumbnail extracted successfully`);
+
+    // Send thumbnail
+    res.setHeader("Content-Type", "image/jpeg");
+    res.setHeader("Cache-Control", "public, max-age=86400"); // Cache for 24 hours
+
+    const thumbnailStream = fs.createReadStream(tempThumbnailPath);
+    thumbnailStream.pipe(res);
+
+    // Clean up after sending
+    thumbnailStream.on("close", () => {
+      cleanupTemp(tempVideoPath);
+      cleanupTemp(tempThumbnailPath);
+    });
+  } catch (error: any) {
+    console.error("[THUMBNAIL] Error:", error);
+    cleanupTemp(tempVideoPath);
+    cleanupTemp(tempThumbnailPath);
+
+    // Return placeholder on error
+    res.redirect(`https://picsum.photos/seed/${req.params.id}/640/360`);
   }
 };

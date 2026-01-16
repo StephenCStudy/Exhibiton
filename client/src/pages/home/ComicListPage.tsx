@@ -1,8 +1,10 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { comicApi } from "../../utils/api";
 import type { Comic, ApiResponse } from "../../utils/types";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import { comicCache } from "../../utils/sessionCache";
+import Loader from "../../components/loader.universe";
+import ErrorState from "../../components/ErrorState";
 import Pagination from "../../components/Pagination";
 import LazyImage from "../../components/LazyImage";
 import "./ComicListPage.css";
@@ -24,12 +26,25 @@ export default function ComicListPage() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const hasFetched = useRef(false);
 
   // Get current page from URL
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
 
   useEffect(() => {
-    fetchComics();
+    // Try to load from cache first
+    const cached = comicCache.getAll();
+    if (cached && cached.length > 0) {
+      setComics(cached);
+      setLoading(false);
+      // Refresh in background if needed
+      if (!hasFetched.current) {
+        hasFetched.current = true;
+        fetchComicsInBackground();
+      }
+    } else {
+      fetchComics();
+    }
   }, []);
 
   // Anti-copy protection
@@ -71,6 +86,8 @@ export default function ComicListPage() {
       const response: ApiResponse<Comic[]> = await comicApi.getAll();
       if (response.success && response.data) {
         setComics(response.data);
+        // Cache the results
+        comicCache.saveAll(response.data);
       } else {
         setError(response.message || "Failed to fetch comics");
       }
@@ -79,6 +96,20 @@ export default function ComicListPage() {
       console.error(err);
     } finally {
       setLoading(false);
+      hasFetched.current = true;
+    }
+  };
+
+  // Fetch in background without showing loading
+  const fetchComicsInBackground = async () => {
+    try {
+      const response: ApiResponse<Comic[]> = await comicApi.getAll();
+      if (response.success && response.data) {
+        setComics(response.data);
+        comicCache.saveAll(response.data);
+      }
+    } catch (err) {
+      console.error("Background fetch failed:", err);
     }
   };
 
@@ -166,21 +197,13 @@ export default function ComicListPage() {
   if (loading) {
     return (
       <div className="page-loading">
-        <LoadingSpinner />
+        <Loader />
       </div>
     );
   }
 
   if (error) {
-    return (
-      <div className="error-container">
-        <div className="error-icon">⚠️</div>
-        <p className="error-message">{error}</p>
-        <button className="btn btn-primary" onClick={fetchComics}>
-          Thử lại
-        </button>
-      </div>
-    );
+    return <ErrorState message={error} onRetry={fetchComics} />;
   }
 
   return (
@@ -297,7 +320,9 @@ export default function ComicListPage() {
                 </div>
                 <h3 className="comic-name line-clamp-1">{comic.name}</h3>
                 <div className="comic-meta">
-                  <span className="chapter-count">45 Chapters</span>
+                  <span className="chapter-count">
+                    {comic.pageCount || comic.pages?.length || 0} trang
+                  </span>
                   <span className="rating">
                     <i className="fas fa-star"></i> 4.8
                   </span>

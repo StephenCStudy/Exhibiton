@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { comicApi, videoApi } from "../../utils/api";
 import type { Comic, Video, ApiResponse } from "../../utils/types";
+import { getVideoName, getComicThumbnail } from "../../utils/types";
 import VideoThumbnail from "../../components/VideoThumbnail";
 import VideoDuration from "../../components/VideoDuration";
 import LazyImage from "../../components/LazyImage";
@@ -206,7 +207,8 @@ export default function HomePage() {
                 <div className="video-thumb-mini">
                   <VideoThumbnail
                     videoId={video._id}
-                    alt={video.title}
+                    alt={getVideoName(video)}
+                    thumbnailFromDb={video.thumbnail}
                     fallbackUrl={
                       video.thumbnail ||
                       `https://picsum.photos/240/135?random=${video._id}`
@@ -221,7 +223,9 @@ export default function HomePage() {
                     className="video-duration-mini"
                   />
                 </div>
-                <h3 className="video-title-mini line-clamp-1">{video.title}</h3>
+                <h3 className="video-title-mini line-clamp-1">
+                  {getVideoName(video)}
+                </h3>
                 <p className="video-creator">Creator</p>
               </div>
             ))

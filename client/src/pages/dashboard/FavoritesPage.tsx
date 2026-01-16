@@ -2,7 +2,15 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { comicApi, videoApi } from "../../utils/api";
 import type { Comic, Video, ApiResponse } from "../../utils/types";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import { getVideoName } from "../../utils/types";
+import { useToast } from "../../components/Toast";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+// Default placeholder for comics
+const DEFAULT_COMIC_THUMBNAIL = "https://i.imgur.com/2wKqGBl.png";
+import Loader from "../../components/loader.universe";
 import VideoThumbnail from "../../components/VideoThumbnail";
 import VideoDuration from "../../components/VideoDuration";
 import BottomNavigation from "../../components/BottomNavigation";
@@ -25,6 +33,8 @@ export default function FavoritesPage() {
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showConfirmClear, setShowConfirmClear] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetchFavorites();
@@ -91,11 +101,16 @@ export default function FavoritesPage() {
   };
 
   const clearAll = () => {
-    if (!confirm("Bạn có chắc muốn xóa tất cả mục yêu thích?")) return;
+    setShowConfirmClear(true);
+  };
+
+  const confirmClearAll = () => {
     favoriteComics.forEach((c) => toggleComicFavorite(c._id));
     favoriteVideos.forEach((v) => toggleVideoFavorite(v._id));
     setFavoriteComics([]);
     setFavoriteVideos([]);
+    setShowConfirmClear(false);
+    showToast("Đã xóa tất cả mục yêu thích", "success");
   };
 
   // Calculate total and filtered items
@@ -130,8 +145,7 @@ export default function FavoritesPage() {
     return (
       <div className="favorites-page">
         <div className="loading-container">
-          <LoadingSpinner />
-          <p>Đang tải danh sách yêu thích...</p>
+          <Loader />
         </div>
       </div>
     );
@@ -227,10 +241,10 @@ export default function FavoritesPage() {
                     >
                       <div className="item-thumbnail">
                         <img
-                          src={comic.coverImage}
+                          src={`${API_BASE_URL}/comics/${comic._id}/cover`}
                           alt={comic.name}
                           onError={(e) => {
-                            e.currentTarget.src = `https://picsum.photos/seed/${comic._id}/200/300`;
+                            e.currentTarget.src = DEFAULT_COMIC_THUMBNAIL;
                           }}
                         />
                         <div className="item-badge comic">
@@ -267,7 +281,8 @@ export default function FavoritesPage() {
                       <div className="item-thumbnail">
                         <VideoThumbnail
                           videoId={video._id}
-                          alt={video.title}
+                          alt={getVideoName(video)}
+                          thumbnailFromDb={video.thumbnail}
                           fallbackUrl={
                             video.thumbnail ||
                             `https://picsum.photos/seed/${video._id}/320/180`
@@ -290,7 +305,7 @@ export default function FavoritesPage() {
                         </button>
                       </div>
                       <div className="item-info">
-                        <h3 className="item-title">{video.title}</h3>
+                        <h3 className="item-title">{getVideoName(video)}</h3>
                         <p className="item-date">
                           {new Date(video.createdAt).toLocaleDateString(
                             "vi-VN"
@@ -313,6 +328,35 @@ export default function FavoritesPage() {
           </>
         )}
       </div>
+
+      {/* Confirm Clear Dialog */}
+      {showConfirmClear && (
+        <div
+          className="confirm-overlay"
+          onClick={() => setShowConfirmClear(false)}
+        >
+          <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-icon">
+              <i className="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 className="confirm-title">Xác nhận xóa</h3>
+            <p className="confirm-message">
+              Bạn có chắc muốn xóa tất cả mục yêu thích?
+            </p>
+            <div className="confirm-actions">
+              <button
+                className="btn-cancel"
+                onClick={() => setShowConfirmClear(false)}
+              >
+                Hủy
+              </button>
+              <button className="btn-confirm" onClick={confirmClearAll}>
+                Xóa tất cả
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <BottomNavigation />
     </div>

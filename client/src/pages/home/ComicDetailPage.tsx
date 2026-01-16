@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { comicApi } from "../../utils/api";
 import type { Comic, ApiResponse } from "../../utils/types";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import { comicCache } from "../../utils/sessionCache";
+import Loader from "../../components/loader.universe";
+import ErrorState from "../../components/ErrorState";
 import LazyImage from "../../components/LazyImage";
 import { isComicFavorite, toggleComicFavorite } from "../../utils/favorites";
 import "./ComicDetailPage.css";
@@ -19,6 +21,8 @@ export default function ComicDetailPage() {
   const [images, setImages] = useState<string[]>([]);
   const [imagesLoading, setImagesLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [showAllImages, setShowAllImages] = useState(false);
+  const PREVIEW_LIMIT = 9;
 
   useEffect(() => {
     if (id) {
@@ -31,9 +35,23 @@ export default function ComicDetailPage() {
     try {
       setLoading(true);
       setError("");
+
+      // Try cache first
+      const cached = comicCache.getById(id!);
+      if (cached) {
+        setComic(cached);
+        setLoading(false);
+        await fetchComicImages(id!);
+        // Fetch fresh data in background
+        fetchComicInBackground();
+        return;
+      }
+
       const response: ApiResponse<Comic> = await comicApi.getById(id!);
       if (response.success && response.data) {
         setComic(response.data);
+        // Cache the comic
+        comicCache.saveById(id!, response.data);
         await fetchComicImages(id!);
       } else {
         setError(response.message || "Failed to fetch comic");
@@ -46,19 +64,33 @@ export default function ComicDetailPage() {
     }
   };
 
+  // Fetch in background
+  const fetchComicInBackground = async () => {
+    try {
+      const response: ApiResponse<Comic> = await comicApi.getById(id!);
+      if (response.success && response.data) {
+        setComic(response.data);
+        comicCache.saveById(id!, response.data);
+      }
+    } catch (err) {
+      console.error("Background fetch failed:", err);
+    }
+  };
+
   const fetchComicImages = async (comicId: string) => {
     setImagesLoading(true);
     try {
       const response = await comicApi.getImages(comicId);
-      if (response.success && response.data) {
+      if (response.success && response.data && response.data.length > 0) {
+        // API returns pages with { name, url, index }
         // Use streaming URLs for each image
         const imageUrls = response.data.map(
-          (_: string, index: number) =>
-            `${API_BASE_URL}/comics/${comicId}/image/${index + 1}/stream`
+          (page: { url: string; index: number }) =>
+            `${API_BASE_URL}/comics/${comicId}/image/${page.index}/stream`
         );
         setImages(imageUrls);
       } else {
-        // Fallback to placeholders if API fails
+        // Fallback to placeholders if API fails or no pages
         const placeholderImages = Array.from(
           { length: 15 },
           (_, i) => `https://picsum.photos/seed/${comicId}-${i}/800/1200`
@@ -94,23 +126,17 @@ export default function ComicDetailPage() {
   if (loading) {
     return (
       <div className="page-loading">
-        <LoadingSpinner />
-        <p className="loading-message">Đang tải truyện...</p>
+        <Loader />
       </div>
     );
   }
 
   if (error || !comic) {
     return (
-      <div className="error-container">
-        <div className="error-icon">
-          <i className="fas fa-exclamation-triangle"></i>
-        </div>
-        <p className="error-message">{error || "Không tìm thấy truyện"}</p>
-        <button className="btn btn-primary" onClick={fetchComic}>
-          Thử lại
-        </button>
-      </div>
+      <ErrorState
+        message={error || "Không tìm thấy truyện"}
+        onRetry={fetchComic}
+      />
     );
   }
 
@@ -177,8 +203,7 @@ export default function ComicDetailPage() {
       {/* Image Gallery Section */}
       {imagesLoading ? (
         <div className="images-loading">
-          <LoadingSpinner />
-          <p>Đang tải hình ảnh...</p>
+          <Loader />
         </div>
       ) : (
         <div className="image-gallery">
@@ -187,22 +212,49 @@ export default function ComicDetailPage() {
             <span className="chapter-count">{images.length} images</span>
           </div>
           <div className="comic-images">
-            {images.slice(0, 5).map((image, index) => (
-              <div key={index} className="image-preview">
-                <img
-                  src={image}
-                  alt={`Trang ${index + 1}`}
-                  loading="lazy"
-                  onError={(e) => {
-                    e.currentTarget.src = `https://via.placeholder.com/400x600?text=Page+${
-                      index + 1
-                    }`;
-                  }}
-                />
-                <div className="image-number">{index + 1}</div>
-              </div>
-            ))}
+            {(showAllImages ? images : images.slice(0, PREVIEW_LIMIT)).map(
+              (image, index) => (
+                <div key={index} className="image-preview">
+                  <img
+                    src={image}
+                    alt={`Trang ${index + 1}`}
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.src = `https://via.placeholder.com/400x600?text=Page+${
+                        index + 1
+                      }`;
+                    }}
+                  />
+                  <div className="image-number">{index + 1}</div>
+                </div>
+              )
+            )}
           </div>
+
+          {/* Show More Button */}
+          {!showAllImages && images.length > PREVIEW_LIMIT && (
+            <button
+              className="show-more-btn"
+              onClick={() => setShowAllImages(true)}
+            >
+              <span>Xem thêm {images.length - PREVIEW_LIMIT} trang</span>
+              <i className="fas fa-chevron-down"></i>
+            </button>
+          )}
+
+          {/* Show Less Button */}
+          {showAllImages && images.length > PREVIEW_LIMIT && (
+            <button
+              className="show-more-btn"
+              onClick={() => {
+                setShowAllImages(false);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            >
+              <span>Thu gọn</span>
+              <i className="fas fa-chevron-up"></i>
+            </button>
+          )}
         </div>
       )}
     </div>

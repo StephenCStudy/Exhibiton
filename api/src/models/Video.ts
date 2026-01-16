@@ -1,9 +1,11 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IVideo extends Document {
-  title: string;
-  thumbnail: string;
-  megaVideoLink: string;
+  name?: string;
+  title?: string; // Legacy field
+  link?: string; // Mega public URL
+  megaVideoLink?: string; // Legacy field
+  thumbnail?: string; // CDN URL for thumbnail
   duration?: number; // Duration in seconds
   createdAt: Date;
   updatedAt: Date;
@@ -11,20 +13,28 @@ export interface IVideo extends Document {
 
 const videoSchema = new Schema<IVideo>(
   {
-    title: {
+    // New schema fields
+    name: {
       type: String,
-      required: [true, "Video title is required"],
       trim: true,
     },
-    thumbnail: {
+    link: {
       type: String,
-      default: "", // Thumbnail is loaded dynamically from video's first frame
+      trim: true,
+    },
+    // Legacy schema fields (for backward compatibility)
+    title: {
+      type: String,
       trim: true,
     },
     megaVideoLink: {
       type: String,
-      required: [true, "Mega video link is required"],
       trim: true,
+    },
+    thumbnail: {
+      type: String,
+      trim: true,
+      default: "",
     },
     duration: {
       type: Number,
@@ -35,6 +45,9 @@ const videoSchema = new Schema<IVideo>(
     timestamps: true,
   }
 );
+
+// Index for sorting by creation date
+videoSchema.index({ createdAt: -1 });
 
 const Video = mongoose.model<IVideo>("Video", videoSchema);
 

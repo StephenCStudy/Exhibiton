@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { videoApi } from "../../utils/api";
 import type { Video } from "../../utils/types";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import { getVideoName } from "../../utils/types";
+import Loader from "../../components/loader.universe";
 import Pagination from "../../components/Pagination";
+import { useToast } from "../../components/Toast";
 import "./DashboardPage.css";
 
 type FormData = {
-  title?: string;
+  name?: string;
   videoFile?: File;
 };
 
@@ -22,6 +24,7 @@ export default function VideoAdminPage() {
   const [submitting, setSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetchVideos();
@@ -41,21 +44,13 @@ export default function VideoAdminPage() {
   };
 
   const openCreateModal = () => {
-    setModalMode("create");
-    setEditingId(null);
-    setFormData({});
-    setUploadProgress("");
-    setShowModal(true);
+    // Disabled - do nothing
+    return;
   };
 
   const openEditModal = (video: Video) => {
-    setModalMode("edit");
-    setEditingId(video._id);
-    setFormData({
-      title: video.title,
-    });
-    setUploadProgress("");
-    setShowModal(true);
+    // Disabled - do nothing
+    return;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,14 +60,14 @@ export default function VideoAdminPage() {
 
     try {
       const uploadFormData = new FormData();
-      uploadFormData.append("title", formData.title!);
+      uploadFormData.append("name", formData.name!);
 
       // Add file if selected
       if (formData.videoFile) {
         setUploadProgress(`Đang upload video: ${formData.videoFile.name}...`);
         uploadFormData.append("file", formData.videoFile);
       } else if (modalMode === "create") {
-        alert("Vui lòng chọn 1 file video!");
+        showToast("Vui lòng chọn 1 file video!", "warning");
         setSubmitting(false);
         setUploadProgress("");
         return;
@@ -116,22 +111,15 @@ export default function VideoAdminPage() {
       fetchVideos();
     } catch (error: any) {
       console.error("Error:", error);
-      alert(`Có lỗi xảy ra: ${error.message}`);
+      showToast(`Có lỗi xảy ra: ${error.message}`, "error");
     }
     setSubmitting(false);
     setUploadProgress("");
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Bạn có chắc muốn xóa video này?")) return;
-
-    try {
-      await videoApi.delete(id);
-      fetchVideos();
-    } catch (error) {
-      console.error("Error deleting:", error);
-      alert("Có lỗi xảy ra khi xóa!");
-    }
+    // Disabled - do nothing
+    return;
   };
 
   // Pagination
@@ -149,7 +137,7 @@ export default function VideoAdminPage() {
   if (loading) {
     return (
       <div className="page-loading">
-        <LoadingSpinner />
+        <Loader />
       </div>
     );
   }
@@ -183,7 +171,7 @@ export default function VideoAdminPage() {
                   <div className="item-thumbnail">
                     <img
                       src={video.thumbnail}
-                      alt={video.title}
+                      alt={getVideoName(video)}
                       onError={(e) => {
                         e.currentTarget.src = `https://picsum.photos/400/225?random=${video._id}`;
                       }}
@@ -193,7 +181,7 @@ export default function VideoAdminPage() {
                     </div>
                   </div>
                   <div className="item-info">
-                    <h3 className="item-title">{video.title}</h3>
+                    <h3 className="item-title">{getVideoName(video)}</h3>
                     <div className="item-actions">
                       <button
                         className="btn-icon edit"
@@ -272,17 +260,17 @@ export default function VideoAdminPage() {
                 <div className="form-field">
                   <label className="field-label">
                     <i className="fas fa-heading"></i>
-                    Tiêu đề video
+                    Tên video
                   </label>
                   <input
                     type="text"
                     className="field-input"
-                    value={formData.title || ""}
+                    value={formData.name || ""}
                     onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
+                      setFormData({ ...formData, name: e.target.value })
                     }
                     required
-                    placeholder="Nhập tiêu đề video..."
+                    placeholder="Nhập tên video..."
                   />
                 </div>
 

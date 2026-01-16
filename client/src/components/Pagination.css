@@ -1,9 +1,20 @@
+.pagination-wrapper {
+    position: fixed;
+    bottom: 70px;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: linear-gradient(transparent, var(--background) 20%);
+    padding: 16px 0 12px;
+}
+
 .pagination {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 2rem 0;
+    padding: 0;
+    max-width: 100%;
 }
 
 .pagination-btn {
@@ -12,10 +23,10 @@
     justify-content: center;
     width: 40px;
     height: 40px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    color: var(--text-primary);
+    color: var(--text-main);
     cursor: pointer;
     transition: all var(--transition-fast);
 }
@@ -50,10 +61,10 @@
     min-width: 40px;
     height: 40px;
     padding: 0 0.5rem;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    color: var(--text-primary);
+    color: var(--text-main);
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
@@ -61,16 +72,16 @@
 }
 
 .pagination-page:hover {
-    background: var(--bg-hover);
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
+    background: var(--surface-highlight);
+    border-color: var(--primary);
+    color: var(--primary);
 }
 
 .pagination-page.active {
-    background: var(--accent-gradient);
+    background: var(--primary);
     border-color: transparent;
-    color: white;
-    box-shadow: var(--shadow-glow);
+    color: #000;
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
 }
 
 .pagination-ellipsis {
@@ -79,11 +90,16 @@
     justify-content: center;
     min-width: 40px;
     height: 40px;
-    color: var(--text-tertiary);
+    color: var(--text-muted);
     font-size: 0.875rem;
 }
 
 @media (max-width: 768px) {
+    .pagination-wrapper {
+        bottom: 65px;
+        padding: 12px 0 8px;
+    }
+
     .pagination {
         gap: 0.25rem;
     }

@@ -317,6 +317,54 @@
     border-radius: 4px;
 }
 
+/* Show More/Less Button */
+.show-more-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 229, 255, 0.3);
+}
+
+.show-more-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 229, 255, 0.4);
+}
+
+.show-more-btn:active {
+    transform: translateY(0);
+}
+
+.show-more-btn i {
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+.show-more-btn:hover i {
+    animation: bounce 0.5s ease infinite;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(3px);
+    }
+}
+
 /* Error Container */
 .error-container {
     display: flex;

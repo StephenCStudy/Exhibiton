@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { comicApi } from "../../utils/api";
 import type { Comic, ApiResponse } from "../../utils/types";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import Loader from "../../components/loader.universe";
+import ErrorState from "../../components/ErrorState";
 import LazyComicImage from "../../components/LazyComicImage";
 import "./ComicReaderPage.css";
 
@@ -72,15 +73,14 @@ export default function ComicReaderPage() {
       // Fetch image list from API
       const response = await comicApi.getImages(comicData._id);
 
-      if (response.success && response.data) {
+      if (response.success && response.data && response.data.length > 0) {
+        // API returns pages with { name, url, index }
         // Use streaming URLs for images
         const imageList: ComicImage[] = response.data.map(
-          (_: string, index: number) => ({
-            name: `page_${index + 1}.jpg`,
-            url: `${API_BASE_URL}/comics/${comicData._id}/image/${
-              index + 1
-            }/stream`,
-            index: index + 1,
+          (page: { name: string; url: string; index: number }) => ({
+            name: page.name || `page_${page.index}.jpg`,
+            url: `${API_BASE_URL}/comics/${comicData._id}/image/${page.index}/stream`,
+            index: page.index,
           })
         );
         setImages(imageList);
@@ -159,23 +159,17 @@ export default function ComicReaderPage() {
   if (loading) {
     return (
       <div className="reader-loading">
-        <LoadingSpinner />
-        <p>Đang tải truyện...</p>
+        <Loader />
       </div>
     );
   }
 
   if (error || !comic) {
     return (
-      <div className="reader-error">
-        <div className="error-icon">
-          <i className="fas fa-exclamation-triangle"></i>
-        </div>
-        <p>{error || "Không tìm thấy truyện"}</p>
-        <button className="btn btn-primary" onClick={handleGoBack}>
-          Quay lại
-        </button>
-      </div>
+      <ErrorState
+        message={error || "Không tìm thấy truyện"}
+        onRetry={handleGoBack}
+      />
     );
   }
 
@@ -203,8 +197,7 @@ export default function ComicReaderPage() {
       <div className="reader-images-container">
         {imagesLoading ? (
           <div className="images-loading-state">
-            <LoadingSpinner />
-            <p>Đang tải hình ảnh từ Mega...</p>
+            <Loader />
           </div>
         ) : (
           images.map((image, index) => (
