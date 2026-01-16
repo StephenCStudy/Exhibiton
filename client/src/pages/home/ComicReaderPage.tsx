@@ -76,13 +76,12 @@ export default function ComicReaderPage() {
       if (response.success && response.data && response.data.length > 0) {
         // API returns pages with { name, url, index }
         // Use streaming URLs for images
-        const imageList: ComicImage[] = response.data.map(
-          (page: { name: string; url: string; index: number }) => ({
-            name: page.name || `page_${page.index}.jpg`,
-            url: `${API_BASE_URL}/comics/${comicData._id}/image/${page.index}/stream`,
-            index: page.index,
-          })
-        );
+        const pages = response.data as unknown as { name: string; url: string; index: number }[];
+        const imageList: ComicImage[] = pages.map((page) => ({
+          name: page.name || `page_${page.index}.jpg`,
+          url: `${API_BASE_URL}/comics/${comicData._id}/image/${page.index}/stream`,
+          index: page.index,
+        }));
         setImages(imageList);
       } else {
         // Fallback to placeholder images if API fails

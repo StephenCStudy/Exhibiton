@@ -84,8 +84,9 @@ export default function ComicDetailPage() {
       if (response.success && response.data && response.data.length > 0) {
         // API returns pages with { name, url, index }
         // Use streaming URLs for each image
-        const imageUrls = response.data.map(
-          (page: { url: string; index: number }) =>
+        const pages = response.data as unknown as { url: string; index: number }[];
+        const imageUrls = pages.map(
+          (page) =>
             `${API_BASE_URL}/comics/${comicId}/image/${page.index}/stream`
         );
         setImages(imageUrls);
