@@ -23,8 +23,8 @@ export default function ComicAdminPage() {
   const [comics, setComics] = useState<Comic[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [modalMode, _setModalMode] = useState<"create" | "edit">("create");
+  const [editingId, _setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({});
   const [submitting, setSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
@@ -53,7 +53,7 @@ export default function ComicAdminPage() {
     return;
   };
 
-  const openEditModal = (comic: Comic) => {
+  const openEditModal = (_comic: Comic) => {
     // Disabled - do nothing
     return;
   };
@@ -124,7 +124,7 @@ export default function ComicAdminPage() {
     setUploadProgress("");
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (_id: string) => {
     // Disabled - do nothing
     return;
   };

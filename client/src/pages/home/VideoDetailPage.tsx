@@ -864,7 +864,7 @@ export default function VideoDetailPage() {
                 <div className="up-next-thumb">
                   <VideoThumbnail
                     videoId={v._id}
-                    alt={v.name}
+                    alt={getVideoName(v)}
                     thumbnailFromDb={v.thumbnail}
                     fallbackUrl={
                       v.thumbnail ||

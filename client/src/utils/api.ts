@@ -6,21 +6,53 @@ export const STORAGE_PROVIDER = import.meta.env.VITE_STORAGE_PROVIDER || "mega";
 export const STORAGE_BASE_URL =
   import.meta.env.VITE_STORAGE_BASE_URL || "https://mega.nz";
 
+// Import types
+import type {
+  Comic,
+  Video,
+  ApiResponse,
+  MegaStructureResponse,
+  SyncResult,
+} from "./types";
+
+// Type-safe fetch wrapper
+async function apiFetch<T>(
+  url: string,
+  options?: RequestInit
+): Promise<ApiResponse<T>> {
+  try {
+    const response = await fetch(url, options);
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({
+        success: false,
+        message: `HTTP ${response.status}: ${response.statusText}`,
+      }));
+      return error as ApiResponse<T>;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("API fetch error:", error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Network error",
+    };
+  }
+}
+
 // Comic API functions
 export const comicApi = {
-  getAll: async () => {
-    const response = await fetch(`${API_BASE_URL}/comics`);
-    return response.json();
+  getAll: async (): Promise<ApiResponse<Comic[]>> => {
+    return apiFetch<Comic[]>(`${API_BASE_URL}/comics`);
   },
 
-  getById: async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/comics/${id}`);
-    return response.json();
+  getById: async (id: string): Promise<ApiResponse<Comic>> => {
+    return apiFetch<Comic>(`${API_BASE_URL}/comics/${id}`);
   },
 
-  getImages: async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/comics/${id}/images`);
-    return response.json();
+  getImages: async (id: string): Promise<ApiResponse<string[]>> => {
+    return apiFetch<string[]>(`${API_BASE_URL}/comics/${id}/images`);
   },
 
   create: async (data: {
@@ -28,13 +60,12 @@ export const comicApi = {
     thumbnail: string;
     description?: string;
     pages?: { pageNumber: number; image: string }[];
-  }) => {
-    const response = await fetch(`${API_BASE_URL}/comics`, {
+  }): Promise<ApiResponse<Comic>> => {
+    return apiFetch<Comic>(`${API_BASE_URL}/comics`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return response.json();
   },
 
   update: async (
@@ -45,33 +76,29 @@ export const comicApi = {
       description?: string;
       pages?: { pageNumber: number; image: string }[];
     }
-  ) => {
-    const response = await fetch(`${API_BASE_URL}/comics/${id}`, {
+  ): Promise<ApiResponse<Comic>> => {
+    return apiFetch<Comic>(`${API_BASE_URL}/comics/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return response.json();
   },
 
-  delete: async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/comics/${id}`, {
+  delete: async (id: string): Promise<ApiResponse<void>> => {
+    return apiFetch<void>(`${API_BASE_URL}/comics/${id}`, {
       method: "DELETE",
     });
-    return response.json();
   },
 };
 
 // Video API functions
 export const videoApi = {
-  getAll: async () => {
-    const response = await fetch(`${API_BASE_URL}/videos`);
-    return response.json();
+  getAll: async (): Promise<ApiResponse<Video[]>> => {
+    return apiFetch<Video[]>(`${API_BASE_URL}/videos`);
   },
 
-  getById: async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/videos/${id}`);
-    return response.json();
+  getById: async (id: string): Promise<ApiResponse<Video>> => {
+    return apiFetch<Video>(`${API_BASE_URL}/videos/${id}`);
   },
 
   create: async (data: {
@@ -79,13 +106,12 @@ export const videoApi = {
     link: string;
     thumbnail: string;
     duration?: number;
-  }) => {
-    const response = await fetch(`${API_BASE_URL}/videos`, {
+  }): Promise<ApiResponse<Video>> => {
+    return apiFetch<Video>(`${API_BASE_URL}/videos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return response.json();
   },
 
   update: async (
@@ -96,52 +122,55 @@ export const videoApi = {
       thumbnail?: string;
       duration?: number;
     }
-  ) => {
-    const response = await fetch(`${API_BASE_URL}/videos/${id}`, {
+  ): Promise<ApiResponse<Video>> => {
+    return apiFetch<Video>(`${API_BASE_URL}/videos/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return response.json();
   },
 
-  delete: async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/videos/${id}`, {
+  delete: async (id: string): Promise<ApiResponse<void>> => {
+    return apiFetch<void>(`${API_BASE_URL}/videos/${id}`, {
       method: "DELETE",
     });
-    return response.json();
   },
 };
 
 // Sync API functions (Mega integration)
 export const syncApi = {
   // Get Mega folder structure preview
-  getMegaStructure: async () => {
-    const response = await fetch(`${API_BASE_URL}/sync/mega/structure`);
-    return response.json();
+  getMegaStructure: async (): Promise<ApiResponse<MegaStructureResponse>> => {
+    return apiFetch<MegaStructureResponse>(
+      `${API_BASE_URL}/sync/mega/structure`
+    );
   },
 
   // Sync videos from Mega
-  syncVideos: async () => {
-    const response = await fetch(`${API_BASE_URL}/sync/mega/videos`, {
+  syncVideos: async (): Promise<ApiResponse<SyncResult>> => {
+    return apiFetch<SyncResult>(`${API_BASE_URL}/sync/mega/videos`, {
       method: "POST",
     });
-    return response.json();
   },
 
   // Sync comics from Mega
-  syncComics: async () => {
-    const response = await fetch(`${API_BASE_URL}/sync/mega/comics`, {
+  syncComics: async (): Promise<ApiResponse<SyncResult>> => {
+    return apiFetch<SyncResult>(`${API_BASE_URL}/sync/mega/comics`, {
       method: "POST",
     });
-    return response.json();
   },
 };
 
 // Config API functions
 export const configApi = {
-  getStorageConfig: async () => {
-    const response = await fetch(`${API_BASE_URL}/config/storage`);
-    return response.json();
+  getStorageConfig: async (): Promise<
+    ApiResponse<{
+      provider: string;
+      baseUrl: string;
+    }>
+  > => {
+    return apiFetch<{ provider: string; baseUrl: string }>(
+      `${API_BASE_URL}/config/storage`
+    );
   },
 };

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { comicApi, videoApi, syncApi } from "../../utils/api";
 import type { Comic, Video } from "../../utils/types";
-import { getVideoName, getComicThumbnail } from "../../utils/types";
+import { getVideoName} from "../../utils/types";
 import Loader from "../../components/loader.universe";
 import VideoThumbnail from "../../components/VideoThumbnail";
 import VideoDuration from "../../components/VideoDuration";

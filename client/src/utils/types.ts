@@ -49,3 +49,21 @@ export interface ApiResponse<T> {
   data?: T;
   message?: string;
 }
+
+// Sync API response types
+export interface MegaStructureResponse {
+  rootFolders: { name: string; isFolder: boolean; childCount: number }[];
+  videoFolder: { name: string; fileCount: number } | null;
+  comicFolder: {
+    name: string;
+    folderCount: number;
+    folders: string[];
+  } | null;
+}
+
+export interface SyncResult {
+  total: number;
+  synced: number;
+  skipped: number;
+  message?: string;
+}
